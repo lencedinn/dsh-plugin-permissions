@@ -3,35 +3,62 @@
 **What can each of your DSH plugins actually reach?**
 
 A DSH profile is a pile of third-party code running with your user rights.
-This plugin reads every installed package and gives it a card: outbound hosts,
-sensitive local stores it names, HTTP routes it opens, processes it spawns,
-and package installs it performs at runtime. Static and read-only — it never
-imports or runs plugin code.
+This plugin reads every installed package and turns it into a permission card:
+outbound hosts, sensitive local stores it names, HTTP routes it opens,
+processes it spawns, and installs it performs at runtime.
+
+Static and read-only — it never imports or runs plugin code.
+
+## What it reports
+
+| Category | What the card shows |
+| --- | --- |
+| Hosts | every external domain named in the code, grouped and counted |
+| Sensitive reads | credential stores, session logs, browser cookie files, SSH keys, API tokens |
+| Routes | `webServer.register()` paths, with `prefix` routes called out |
+| Execution | child processes, shells, PowerShell, Python subprocesses |
+| Runtime installs | downloads the package record does not show |
+| Install scripts | `preinstall` / `postinstall` / `prepare` hooks |
+
+Each finding carries the file and line it came from, so a card is a starting
+point for reading the code, not a verdict. Findings describe **capability, not
+intent**: a plugin that talks to GitHub is not suspicious by itself. The point
+is that "which of my plugins can read my tokens" takes seconds instead of an
+afternoon.
+
+## The panel
+
+Left rail → **插件透视 / Plugin Permissions**. One card per package, sorted with
+enabled packages first:
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│ dsh-bili-scroll  2.0.0  已启用                          [高]  │
-│ 12 域名 · 1 路由 · 1 敏感读取                                 │
-│ 域名   www.bilibili.com  api.bilibili.com  passport…          │
-│ 路由   prefix /api/bili-duty                                  │
-│ 发现   [敏感读取] client.js:489  扫码成功但响应里没有 SESSDATA… │
+│ plugin-name  1.2.3  已启用                             [高]   │
+│ 3 域名 · 1 路由 · 1 敏感读取                                  │
+│                                                               │
+│ 域名    api.example.net   cdn.example.net   …                 │
+│ 路由    prefix /api/plugin-name                               │
+│ 发现    [敏感读取] index.js:42   读取了凭据文件 …              │
 └───────────────────────────────────────────────────────────────┘
 ```
 
-## What it finds
+- **Header** — how many packages were scanned and how many are high risk, plus
+  a `Rescan` button.
+- **Filter tabs** — all / high risk / has network / has routes.
+- **Search** — matches package names, hosts, routes, and finding text.
+- **Expand** — the first few findings are always visible; expanding shows every
+  finding with its `file:line`.
+- **Empty and clean packages** say so: no hosts, no routes, no findings.
 
-| Category | Examples |
-| --- | --- |
-| Hosts | every external URL in the code, grouped by domain |
-| Sensitive reads | `.credentials.yaml`, `~/.dsh/sessions`, browser cookie stores, SSH keys, `bili_credential.json`, `~/.codex` |
-| Routes | `webServer.register()` paths, with `prefix` routes called out |
-| Execution | `child_process`, `spawn`, PowerShell, Python subprocesses |
-| Runtime installs | `pip` / `pnpm` / `curl` downloads the package record does not show |
-| Install scripts | `preinstall` / `postinstall` / `prepare` hooks |
+## The tool
 
-Findings describe **capability, not intent**. A plugin that talks to GitHub is
-not suspicious by itself; the card exists so "which of my plugins can read my
-tokens" takes seconds instead of an afternoon.
+The agent sees the same scan through one tool, so a question in chat and a card
+on screen never disagree:
+
+```js
+plugin_permissions({ plugin: "some-plugin" })
+plugin_permissions({ category: "sensitive" })
+```
 
 ## Install
 
@@ -39,35 +66,18 @@ tokens" takes seconds instead of an afternoon.
 dsh plugin --profile web add github:lencedinn/dsh-plugin-permissions
 ```
 
-For the desktop profile, the same command with `--profile desktop`.
-
-A new package registers its client half on install; if the panel icon does not
-appear, refresh the page once.
-
-## Panel
-
-Left rail → **插件透视 / Plugin Permissions**. Filter by high risk, network, or
-routes; search by package, host, or route; expand a card for `file:line`
-evidence. `Rescan` refreshes the 60-second cache.
-
-## Tool
-
-The agent sees the same scan:
-
-```js
-plugin_permissions({ plugin: "dsh-bili-scroll" })
-plugin_permissions({ category: "sensitive" })
-```
+Use `--profile desktop` for the desktop app. A newly installed package is picked
+up on the next page load; if the panel icon does not appear, refresh once.
 
 ## Scope and limits
 
-- Scans the profile's installed dependencies, skipping `@deepseek-ai/*`
-  packages shipped with the harness; `@local/*` packages are included and
-  tagged local.
+- Scans the profile's installed dependencies. `@deepseek-ai/*` packages shipped
+  with the harness are skipped; `@local/*` packages are included and tagged
+  local.
 - Skips `node_modules`, `dist`, `dev`, `test`, `docs`, and files over 1.5 MB.
-- Regex-based: it reports what code *names*, not what it does at runtime. A
-  minified bundle or a dynamically built URL can hide a destination.
-- The scan route refuses cross-origin requests because findings expose local
+- Regex-based and static: it reports what code *names*, not what it does at
+  runtime. A minified bundle or a dynamically built URL can hide a destination.
+- The scan route refuses cross-origin requests, because findings expose local
   paths and source snippets.
 
 ## Config
