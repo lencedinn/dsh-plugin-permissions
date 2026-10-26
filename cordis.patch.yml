@@ -1,0 +1,4 @@
+- insert:
+    - id: plugin-permissions
+      name: 'dsh-plugin-permissions'
+      config: {}

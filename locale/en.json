@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Plugin Permissions",
+    "description": "One card per installed plugin: which hosts it reaches, which credential and session stores it names, which routes it opens, and what it executes. Static and read-only."
+  }
+}

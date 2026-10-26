@@ -1,0 +1,49 @@
+{
+  "name": "dsh-plugin-permissions",
+  "version": "1.0.0",
+  "description": "Static permission cards for installed DSH plugins: outbound hosts, sensitive local stores, routes, execution, runtime installs.",
+  "type": "module",
+  "license": "MIT",
+  "author": "lencedinn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lencedinn/dsh-plugin-permissions.git"
+  },
+  "homepage": "https://github.com/lencedinn/dsh-plugin-permissions#readme",
+  "bugs": {
+    "url": "https://github.com/lencedinn/dsh-plugin-permissions/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "security",
+    "permissions",
+    "audit"
+  ],
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-layout"]
+    }
+  }
+}
